@@ -12,6 +12,7 @@ import 'package:test/test.dart';
 
 import 'descriptor.dart' as d;
 import 'test_pub.dart';
+import 'validator/utils.dart';
 
 late String root;
 Entrypoint? entrypoint;
@@ -45,14 +46,7 @@ void main() {
         ]));
   });
 
-  // On windows symlinks to directories are distinct from symlinks to files.
-  void createDirectorySymlink(String path, String target) {
-    if (Platform.isWindows) {
-      Process.runSync('cmd', ['/c', 'mklink', '/D', path, target]);
-    } else {
-      Link(path).createSync(target);
-    }
-  }
+
 
   test('throws on directory symlinks', () async {
     await d.dir(appPath, [
@@ -80,6 +74,29 @@ void main() {
         ),
       ),
     );
+  });
+
+  test('not throws on ignored directory symlinks', () async {
+    await d.dir(appPath, [
+      d.pubspec({'name': 'myapp'}),
+      d.file('file1.txt', 'contents'),
+      d.file('file2.txt', 'contents'),
+      d.dir('subdir', [
+        d.file('.pubignore', 'symlink'),
+        d.dir('a', [d.file('file')]),
+      ]),
+    ]).create();
+    createDirectorySymlink(
+        p.join(d.sandbox, appPath, 'subdir', 'symlink'), 'a');
+
+    createEntrypoint();
+
+    expect(entrypoint!.root.listFiles(), {
+      p.join(root, 'pubspec.yaml'),
+      p.join(root, 'file1.txt'),
+      p.join(root, 'file2.txt'),
+      p.join(root, 'subdir', 'a', 'file'),
+    });
   });
 
   test('can list a package inside a symlinked folder', () async {
@@ -421,6 +438,118 @@ void main() {
       p.join(root, 'gitignoredir', 'nested', 'c.text'),
       p.join(root, 'pubignoredir', 'foo'),
       p.join(root, 'pubignoredir', 'b.txt'),
+    });
+  });
+
+  group('nested ignores in exact directory', ()  {
+    setUp(ensureGit);
+
+    test('ignore directory in exact directory', () async {
+      final repo = d.git(appPath, [
+        d.dir('packages', [
+          d.dir('nested', [
+            d.file('.gitignore', '/bin/'),
+            d.appPubspec(),
+            d.dir('bin', [
+              d.file('run.dart'),
+            ]),
+          ]),
+        ]),
+      ]);
+      await repo.create();
+      createEntrypoint(p.join(appPath, 'packages', 'nested'));
+
+      expect(entrypoint!.root.listFiles(), {
+        p.join(root, 'pubspec.yaml'),
+      });
+    });
+
+    test('ignore directory in exact directory', () async {
+      final repo = d.git(appPath, [
+        d.dir('packages', [
+          d.dir('nested', [
+            d.file('.gitignore', '/bin/'),
+            d.appPubspec(),
+            d.file('bin'),
+          ]),
+        ]),
+      ]);
+      await repo.create();
+      createEntrypoint(p.join(appPath, 'packages', 'nested'));
+
+      expect(entrypoint!.root.listFiles(), {
+        p.join(root, 'pubspec.yaml'),
+        p.join(root, 'bin'),
+      });
+    });
+
+    test('ignore file on exact directory', () async {
+      final repo = d.git(appPath, [
+        d.dir('packages', [
+          d.dir('nested', [
+            d.appPubspec(),
+            d.dir('bin', [
+              d.file('.gitignore', '/run.dart'),
+              d.file('run.dart'),
+            ]),
+          ]),
+        ]),
+      ]);
+      await repo.create();
+      createEntrypoint(p.join(appPath, 'packages', 'nested'));
+
+      expect(entrypoint!.root.listFiles(), {
+        p.join(root, 'pubspec.yaml'),
+      });
+    });
+
+    test('not ignore files beneath exact directory', () async {
+      final repo = d.git(appPath, [
+        d.dir('packages', [
+          d.dir('nested', [
+            d.appPubspec(),
+            d.dir('bin', [
+              d.file('.gitignore', '/run.dart'),
+              d.file('run.dart'),
+              d.dir('nested_again', [
+                d.file('run.dart'),
+              ]),
+            ]),
+          ]),
+        ]),
+      ]);
+      await repo.create();
+      createEntrypoint(p.join(appPath, 'packages', 'nested'));
+
+      expect(entrypoint!.root.listFiles(), {
+        p.join(root, 'pubspec.yaml'),
+        p.join(root, 'bin', 'nested_again', 'run.dart'),
+      });
+    });
+
+    test('disable ignore in exact directory', () async {
+      final repo = d.git(appPath, [
+        d.dir('packages', [
+          d.file('.gitignore', 'run.dart'),
+          d.dir('nested', [
+            d.appPubspec(),
+            d.dir('bin', [
+              d.file('.gitignore', '!/run.dart'),
+              d.file('run.dart'),
+              d.dir('nested_again', [
+                d.file('run.dart'),
+              ]),
+            ]),
+          ]),
+        ]),
+      ]);
+      await repo.create();
+      createEntrypoint(p.join(appPath, 'packages', 'nested'));
+
+      expect(entrypoint!.root.listFiles(), {
+        p.join(root, 'pubspec.yaml'),
+        p.join(root, 'bin', 'run.dart'),
+      });
     });
   });
 }
