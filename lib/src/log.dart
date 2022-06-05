@@ -550,6 +550,7 @@ void _logToStderr(_Entry entry) {
 /// Log function that prints the message to stderr with the level name.
 void _logToStderrWithLabel(_Entry entry) {
   _logToStream(stderr, entry, showLabel: true);
+  stderr.flush();
 }
 
 void _logToStream(IOSink sink, _Entry entry, {required bool showLabel}) {

@@ -263,6 +263,8 @@ class Package {
         }
         return contents.map((entity) {
           final relative = p.relative(entity.path, from: root);
+          log.warning('path: ${entity.path}');
+          log.warning('relative: $relative');
           if (Platform.isWindows) {
             return p.posix.joinAll(p.split(relative));
           }
@@ -334,6 +336,8 @@ class Package {
     String resolvedDir,
     Map<String, Set<String>> visitedSymlinks,
   ) {
+    log.warning('internalDir: $internalDir');
+    log.warning('resolvedDir: $resolvedDir');
     final link = Link(resolvedDir);
 
     var currentSymlinks = visitedSymlinks[p.posix.dirname(internalDir)];
