@@ -180,8 +180,8 @@ void main() {
           d.file('file2.txt', 'contents'),
           d.dir('subdir', [
             d.dir('a', [d.file('file')]),
-            d.dir('b'),
-            d.dir('c'),
+            d.dir('b', [d.file('file')]),
+            d.dir('c', [d.file('file')]),
           ]),
         ]).create();
         createDirectorySymlink(
