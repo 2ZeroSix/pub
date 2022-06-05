@@ -554,7 +554,7 @@ void _logToStderrWithLabel(_Entry entry) {
 
 void _logToStream(IOSink sink, _Entry entry, {required bool showLabel}) {
   if (json.enabled) return;
-
+  sink.flush();
   _printToStream(sink, entry, showLabel: showLabel);
 }
 
