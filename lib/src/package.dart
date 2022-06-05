@@ -337,6 +337,11 @@ class Package {
       log.warning('resolvedLinkPath: $resolvedLinkPath');
       log.warning('currentSymlinks.length: ${currentSymlinks.length}');
       log.warning('currentSymlinks: ${currentSymlinks.join(', ')}');
+      log.warning(
+        'visitedSymlinks: ${visitedSymlinks.entries.map(
+              (entry) => '${entry.key}: {${entry.value.join(', ')}}',
+            ).join('; ')}',
+      );
       if (!currentSymlinks.add(resolvedLinkPath)) {
         final link = Link(resolvedDir);
         final target = link.targetSync();
