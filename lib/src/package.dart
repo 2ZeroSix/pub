@@ -334,6 +334,9 @@ class Package {
       final currentSymlinks =
           visitedSymlinks[p.posix.dirname(posixDir)] ?? <String>{};
       visitedSymlinks[posixDir] = currentSymlinks;
+      log.warning('resolvedLinkPath: $resolvedLinkPath');
+      log.warning('currentSymlinks.length: ${currentSymlinks.length}');
+      log.warning('currentSymlinks: ${currentSymlinks.join(', ')}');
       if (!currentSymlinks.add(resolvedLinkPath)) {
         final link = Link(resolvedDir);
         final target = link.targetSync();
